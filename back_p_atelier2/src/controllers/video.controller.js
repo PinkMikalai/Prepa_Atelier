@@ -1,9 +1,10 @@
-
+const { pool, testConnection } = require('../db/index.js');
 // touts nos videos
-function getVideos(req, res) {
+async function getVideos(req, res) {
 
     console.log("ici test videos");
-    
+
+    await testConnection();
 }
 
 
