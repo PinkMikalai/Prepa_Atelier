@@ -6,16 +6,61 @@ const generateThumbnail = require('../utils/generateThumbnail.js');
 
 // touts nos videos
 async function getVideos(req, res) {
+    // console.log("ici test videos");
 
-    console.log("ici test videos");
+    // await testConnection();
 
-    await testConnection();
+   //ma logique
+    try {
+      const videos = await Video.getAllVideos();
+
+      console.log("List de mes videos", videos);
+      
+      res.status(200).json({
+        success: true,
+        message: "Videos trouvees",
+        videos: videos
+        
+      });
+    }catch(error) {
+      console.log("Erreur dans la recuperation des videos", error);
+      res.status(500).json({
+        success: false,
+        message: "Erreur dans la recuperation des videos"
+      });
+    }
 }
 
 
 //video par son id
-function getVideoById(req, res) {
+async function getVideoById(req, res) {
 
+  //ma logique
+  try {
+    // on recupere l id de video
+    const video = await Video.getVideoById(req.params.id);
+    if (!video) {
+      console.log("Video non trouvee");
+      return res.status(404).json({
+        success: false,
+        message: "Video non trouvee"
+      });
+    }
+    // on affiche la video trouvee sur cmder
+    console.log("Video trouvee", video);
+    
+    res.status(200).json({
+      message: "Video trouvee",
+      video: video,
+      success: true
+    });
+  }catch(error) {
+    console.log("Erreur dans la recuperation de la video", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur dans la recuperation de la video"
+    });
+  }
 }
 
 //creer une video
