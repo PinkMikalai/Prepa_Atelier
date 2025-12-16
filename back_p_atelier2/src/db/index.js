@@ -15,7 +15,4 @@ async function testConnection() {
     console.log('co a mysql ok a, ' , rows[0].now);
 }
 
-module.exports = {
-    pool,
-    testConnection
-};
+module.exports = pool;
