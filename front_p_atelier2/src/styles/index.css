@@ -1,0 +1,9 @@
+/* Fichier principal d'import - Importe Tailwind et tous les styles modulaires */
+
+@import "tailwindcss";
+@import "./variables.css";
+@import "./base.css";
+@import "./layout.css";
+@import "./components.css";
+@import "./upload.css";
+@import "./video.css";
