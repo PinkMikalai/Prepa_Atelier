@@ -1,0 +1,21 @@
+/* Variables Tailwind et couleurs personnalisées Mozi */
+
+@theme {
+    --color-mozi-black: #1B1E25;
+    --color-mozi-black-light: #1D2027;
+    --color-mozi-grey: #696D74;
+    --color-mozi-grey-light: #BABFC9;
+    --color-mozi-active: #FF8C42;
+    --color-mozi-green: #4CAF50;
+}
+
+/* Variables CSS personnalisées pour utilisation dans les composants */
+:root {
+    --mozi-black: #1B1E25;
+    --mozi-black-light: #1D2027;
+    --mozi-grey: #696D74;
+    --mozi-grey-light: #BABFC9;
+    --mozi-active: #FF8C42;
+    --mozi-green: #4CAF50;
+    --mozi-bg: #DAE1E9;
+}
