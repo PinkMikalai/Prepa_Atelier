@@ -1,5 +1,7 @@
 const { z } = require('zod');
 
+// schéma de validation des données pour la création des videos
+
 const createCommentSchema = z.object({
     video_id: z.number().int().positive(),
     pseudo: z.string().min(1, 'Pseudo obligatoire'),
@@ -7,9 +9,18 @@ const createCommentSchema = z.object({
 }
 )
 
+// schéma de validation des données pour la modification des commentaires 
+
 const updateCommentSchema = z.object({
     content: z.string().min(1)
 }
-)
+).refine(
+  data =>
+    data.content !== undefined ||
+   
+  {
+    message: `Aucune modification n'a été effectuée`,
+  }
+);
 
 module.exports = { createCommentSchema, updateCommentSchema };
