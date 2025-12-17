@@ -28,6 +28,18 @@ const Video = {
     const [rows] = await pool.query("SELECT * FROM videos WHERE id = ?", [id]);
     //si pas de video trouvee, on retourne null
     return rows[0] || null;
+  },
+
+
+  //ici je gere mon update de mon video
+  async update({pseudo, title, description, theme_id, thumbnail}){
+
+    const [result] = await pool.query(
+      `UPDATE videos SET pseudo = ?, title = ?, description = ?, theme_id = ?, thumbnail = ? WHERE id = ?`,
+      [pseudo, title, description, theme_id, thumbnail, id]
+    );
+    
+    return result;
   }
 };
 

@@ -1,3 +1,4 @@
+const { success } = require('zod');
 const { pool, testConnection } = require('../db/index.js');
 const Video = require('../models/videoModel.js');
 const uploadVideoService = require('../services/uploadVideo.service.js');
@@ -77,6 +78,12 @@ async function createVideo(req, res) {
         message: "pseudo, title et theme_id sont obligatoires",
       });
     }
+    console.log(pseudo);
+    console.log(title);
+    console.log(theme_id);
+    
+    
+    
 
     // 3️⃣ Vérification doublon titre
     const existing = await Video.findByTitle(title);
@@ -118,7 +125,46 @@ async function createVideo(req, res) {
 }
 
 //mettre a jour une video
-function updateVideo(req, res) {
+async function updateVideo(req, res) {
+
+  //ma logique 
+  try{
+    const video = await Video.update(req.params.id);
+    // on recupere les donnees de la video a modifier
+    const {pseudo, title, description, theme_id, thumbnail} = req.body;
+    const videoById = req.params.id;
+    
+    console.log(videoById);
+    
+    if(!title || !description || !theme_id){
+      console.log("title, description et theme_id sont obligatoires");
+      return res.status(400).json({
+        success: false,
+        message: "title, description et theme_id sont obligatoires"
+      });
+    }
+   
+    console.log(videoById);
+    res.status(200).json({
+      success : false,
+      message: "Video a ete modifie",
+      video : video
+    })
+    console.log(video, "video a ete modifie avec success");
+   
+  }catch(error){
+
+    //on affiche l erreur sur cmder
+    console.log("erreur globale lors de modif catch", error);
+    //on affiche l erreur sur le client
+    return res.status(404).json({
+      success: false,
+      message : "Erreur lors de modification de video"
+    })
+
+  }
+
+
 }
 
 //supprimer une video
