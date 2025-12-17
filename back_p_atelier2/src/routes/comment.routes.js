@@ -1,11 +1,14 @@
 const {Router} = require("express");
+const { validate } = require('../middleware/validate.js');
+const { createCommentSchema, updateCommentSchema} = require('../schemas/comment.schema.js')
 const commentController = require("../controllers/comment.controller");
+
 
 const router = Router();
 
-router.get("/", commentController.getComments);
-router.post("/", commentController.createComment);
-router.put("/:id", commentController.updateComment);
+router.get("/videos/:video_id", commentController.getCommentsByVideo);
+router.post("/", validate(createCommentSchema), commentController.addComment);
+router.put("/:id", validate(updateCommentSchema), commentController.updateComment);
 router.delete("/:id", commentController.deleteComment);
 
 module.exports = router;

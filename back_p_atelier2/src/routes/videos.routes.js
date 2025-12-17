@@ -1,4 +1,6 @@
-const {Router} = require("express");
+const { Router } = require("express");
+const { validate } = require('../middleware/validate.js');
+const { createVideoSchema, updateVideoSchema } = require('../schemas/comment.schema.js')
 const videoController = require("../controllers/video.controller");
 
 const router = Router();
