@@ -18,16 +18,17 @@ const Video = {
     return rows[0] || null;
   },
 
-    async findById(id) {
-    const [rows] = await pool.query(
-      `SELECT * FROM videos WHERE id = ?`,
-      [id]
-    );
+  // Tous nos videos
+  async getAllVideos() {
+    const [rows] = await pool.query("SELECT * FROM videos ORDER BY created_at DESC");
+    return rows;
+  },
+  //video par son id
+  async getVideoById(id) {
+    const [rows] = await pool.query("SELECT * FROM videos WHERE id = ?", [id]);
+    //si pas de video trouvee, on retourne null
     return rows[0] || null;
   }
-
-
-
 };
 
 module.exports = Video;

@@ -1,0 +1,139 @@
+/* Styles pour les composants réutilisables */
+
+/* Boutons */
+.btn {
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--mozi-black);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--mozi-black-light);
+}
+
+.btn-secondary {
+    background-color: var(--mozi-grey);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: var(--mozi-black);
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-icon:hover {
+    background-color: var(--mozi-black);
+}
+
+/* Cartes */
+.card {
+    background-color: var(--mozi-black);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: scale(1.05);
+}
+
+.card-header {
+    padding: 1rem;
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+/* Inputs et formulaires */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--mozi-black);
+    margin-bottom: 0.5rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--mozi-grey-light);
+    border-radius: 0.5rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: 2px solid var(--mozi-active);
+    outline-offset: 2px;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--mozi-grey-light);
+    border-radius: 0.5rem;
+    resize: none;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.form-textarea:focus {
+    outline: 2px solid var(--mozi-active);
+    outline-offset: 2px;
+}
+
+/* Étoiles de notation */
+.stars-container {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.star {
+    width: 0.9375rem; /* 15px */
+    height: 0.9375rem;
+    flex-shrink: 0;
+}
+
+.star-filled {
+    fill: #FFD700;
+}
+
+.star-empty {
+    fill: var(--mozi-grey);
+}
+
+/* Badges et tags */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge-theme {
+    background-color: var(--mozi-grey-light);
+    color: var(--mozi-black);
+}

@@ -8,8 +8,7 @@ const createCommentSchema = z.object({
 )
 
 const updateCommentSchema = z.object({
-    pseudo: z.string().min(1, 'Pseudo obligatoire'),
-    content: z.string().min(1, 'Le commentaire ne peut pas être vide')
+    content: z.string().min(1)
 }
 )
 

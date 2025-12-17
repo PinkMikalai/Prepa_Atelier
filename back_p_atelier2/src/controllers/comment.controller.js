@@ -4,8 +4,8 @@ const commentService = require('../services/comment.service.js');
   async function getCommentsByVideo(req, res) {
    
   try {
-    const commentsByVideo = await commentService.getCommentsByVideo(req.params.videoId);
-    const countCommentsByVideo = await commentService.countComments(req.params.videoId)
+    const commentsByVideo = await commentService.getCommentsByVideo(req.params.video_id);
+    const countCommentsByVideo = await commentService.countComments(req.params.video_id)
     res.json({
       comments :commentsByVideo, 
       countComments : countCommentsByVideo});
@@ -13,11 +13,6 @@ const commentService = require('../services/comment.service.js');
     res.status(400).json({ message: error.message });
   }
 };
-
-
-// async function getCommentById(req, res) {
-
-// }
 
 
  async function addComment(req, res) {
@@ -36,7 +31,7 @@ const commentService = require('../services/comment.service.js');
  async function updateComment(req, res) {
 
   try {
-    const comment = await commentService.update(req.params.id, req.body.content);
+    const comment = await commentService.updateComment(req.params.id, req.body.content);
     res.json(comment);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -48,7 +43,7 @@ const commentService = require('../services/comment.service.js');
  async function deleteComment(req, res) {
 
   try {
-    await commentService.delete(req.params.id);
+    await commentService.deleteComment(req.params.id);
     res.status(204).send();
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -58,7 +53,6 @@ const commentService = require('../services/comment.service.js');
 
 module.exports = { 
     getCommentsByVideo, 
-    // getCommentById, 
     addComment, 
     updateComment, 
     deleteComment

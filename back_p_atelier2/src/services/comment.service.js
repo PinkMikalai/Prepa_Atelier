@@ -2,30 +2,29 @@ const commentModel = require('../models/commentModel');
 const videoModel = require('../models/videoModel');
 
 const addComment = async (data) => {
-console.log('videoId reçu :', data.videoId);
-  const video = await videoModel.findById(data.videoId);
-  console.log('videoId reçu :', video);
+  const { video_id, pseudo, content } = data;
+  const video = await videoModel.getVideoById(video_id);
   if (!video) {
     throw new Error('Vidéo inexistante');
   }
-
-  return commentModel.create(data);
+  console.log('Insertion commentaire:', { video_id, pseudo, content });
+  return commentModel.addComment(video_id, pseudo, content);
 };
 
-const getCommentsByVideo = async (videoId) => {
-  return commentModel.findByVideo(videoId);
+const getCommentsByVideo = async (video_id) => {
+  return commentModel.getCommentsByVideo(video_id);
 };
 
-const updateComment = async (id, content) => {
-  return commentModel.update(id, content);
+const updateComment = async (comment_id, content) => {
+  return commentModel.updateComment(comment_id, content);
 };
 
 const deleteComment = async (id) => {
-  return commentModel.delete(id);
+  return commentModel.deleteComment(id);
 };
 
-const countComments = async (videoId) => {
-  return commentModel.countCommentsByVideo(videoId);
+const countComments = async (video_id) => {
+  return commentModel.countCommentsByVideo(video_id);
 }
 
 module.exports = {
