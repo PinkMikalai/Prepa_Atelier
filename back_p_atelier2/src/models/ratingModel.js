@@ -11,6 +11,7 @@ const Rating = {
         );
         return result.insertId
     }
+
 }
 
 module.exports = {

@@ -12,7 +12,7 @@ const ratingService = {
         // Vérifier que video_id est fourni
         const video = await getVideoById(video_id);
         if(!video) {
-            throw {success: false, message: "La vidéo n'existe pas"}
+            return {success: false, message: "La vidéo n'existe pas"}
         }
         // console.log('que contient video', video);
         
@@ -20,12 +20,12 @@ const ratingService = {
 
         // Vérifier que rating est fourni et est un nombre
         if(rating === undefined || rating === null || typeof rating !== 'number') {
-            throw {success: false, message: "Il n'y a pas de notes ou la note n'est pas un nombre"};
+            return {success: false, message: "Il n'y a pas de notes ou la note n'est pas un nombre"};
         } 
 
         // Vérifier que rating est compris entre 1 et 5
         if (rating < 1 || rating > 5) {
-            throw {success: false, message: "La note est comprise entre 1 et 5"}
+            return {success: false, message: "La note est comprise entre 1 et 5"}
         } 
 
         // préparer l'objet à insérer 
