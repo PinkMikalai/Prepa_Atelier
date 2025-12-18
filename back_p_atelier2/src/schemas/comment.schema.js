@@ -3,7 +3,6 @@ const { z } = require('zod');
 // schéma de validation des données pour la création des videos
 
 const createCommentSchema = z.object({
-    video_id: z.number().int().positive(),
     pseudo: z.string().min(1, 'Pseudo obligatoire'),
     content: z.string().min(1, 'Le commentaire ne peut pas être vide')
 }
