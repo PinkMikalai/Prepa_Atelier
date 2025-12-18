@@ -52,10 +52,12 @@ function UploadForm({ onUploadSuccess, isDarkMode, themeDropdownRef, isThemeDrop
     pseudo: ''
   })
   const [videoFile, setVideoFile] = useState(null)
+  const [thumbnailFile, setThumbnailFile] = useState(null)
   const [selectedTheme, setSelectedTheme] = useState('')
   const [videoProgress, setVideoProgress] = useState(0)
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
   const videoFileInputRef = useRef(null)
+  const thumbnailFileInputRef = useRef(null)
 
   // Fonction pour gérer la sélection de fichier vidéo
   const handleFileSelect = (event) => {
@@ -79,9 +81,36 @@ function UploadForm({ onUploadSuccess, isDarkMode, themeDropdownRef, isThemeDrop
     }
   }
 
-  // Fonction pour déclencher le sélecteur de fichier
+  // Fonction pour déclencher le sélecteur de fichier vidéo
   const triggerFileInput = () => {
     videoFileInputRef.current?.click()
+  }
+
+  // Fonction pour gérer la sélection de fichier thumbnail
+  const handleThumbnailSelect = (event) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Vérifier le type de fichier
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        alert('Format d\'image non supporté. Formats acceptés: JPEG, PNG, GIF, WebP')
+        return
+      }
+      
+      // Vérifier la taille (max 5 Mo)
+      const maxSize = 5 * 1024 * 1024 // 5 Mo
+      if (file.size > maxSize) {
+        alert('Image trop volumineuse. Taille maximale: 5 Mo')
+        return
+      }
+      
+      setThumbnailFile(file)
+    }
+  }
+
+  // Fonction pour déclencher le sélecteur de fichier thumbnail
+  const triggerThumbnailInput = () => {
+    thumbnailFileInputRef.current?.click()
   }
 
   // Fonction pour soumettre le formulaire d'upload
@@ -139,13 +168,17 @@ function UploadForm({ onUploadSuccess, isDarkMode, themeDropdownRef, isThemeDrop
           // Réinitialiser le formulaire
           setFormData({ title: '', description: '', pseudo: '' })
           setVideoFile(null)
+          setThumbnailFile(null)
           setSelectedTheme('')
           setVideoProgress(0)
           setIsUploadingVideo(false)
           
-          // Réinitialiser l'input file
+          // Réinitialiser les inputs file
           if (videoFileInputRef.current) {
             videoFileInputRef.current.value = ''
+          }
+          if (thumbnailFileInputRef.current) {
+            thumbnailFileInputRef.current.value = ''
           }
           
           // Appeler le callback de succès
@@ -308,9 +341,13 @@ function UploadForm({ onUploadSuccess, isDarkMode, themeDropdownRef, isThemeDrop
             onClick={() => {
               setFormData({ title: '', description: '', pseudo: '' })
               setVideoFile(null)
+              setThumbnailFile(null)
               setSelectedTheme('')
               if (videoFileInputRef.current) {
                 videoFileInputRef.current.value = ''
+              }
+              if (thumbnailFileInputRef.current) {
+                thumbnailFileInputRef.current.value = ''
               }
             }}
             className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-gray-400"

@@ -36,23 +36,43 @@ function VideoMeta({ video, isDarkMode }) {
   }
 
   // Fonction pour charger la note d'une vidéo
-  const fetchRating = async (videoId, userId = 1) => {
+  const fetchRating = async (videoId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/raiting?video_id=${videoId}&user_id=${userId}`)
-      const data = await response.json()
-      
-      if (data.success && data.rating) {
-        const userRatingValue = data.rating.user_rating || 0
+      // Récupérer toutes les notes pour cette vidéo et calculer la moyenne
+      const response = await fetch(`${API_BASE_URL}/ratings/video/${videoId}`)
+      if (!response.ok) {
+        // Si la route n'existe pas encore, on initialise à 0
         setVideoRatings(prev => ({
           ...prev,
-          [videoId]: userRatingValue
+          [videoId]: 0
         }))
         if (video?.id === videoId) {
-          setUserRating(userRatingValue)
+          setUserRating(0)
+        }
+        return
+      }
+      const data = await response.json()
+      
+      if (data.success && data.averageRating !== undefined) {
+        const averageRating = Math.round(data.averageRating * 10) / 10 // Arrondir à 1 décimale
+        setVideoRatings(prev => ({
+          ...prev,
+          [videoId]: averageRating
+        }))
+        if (video?.id === videoId) {
+          setUserRating(averageRating)
         }
       }
     } catch (error) {
       console.error('Erreur lors du chargement de la note:', error)
+      // En cas d'erreur, initialiser à 0
+      setVideoRatings(prev => ({
+        ...prev,
+        [videoId]: 0
+      }))
+      if (video?.id === videoId) {
+        setUserRating(0)
+      }
     }
   }
 
