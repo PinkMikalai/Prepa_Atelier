@@ -27,7 +27,7 @@ async function generateThumbnail(videoAbsolutePath) {
 
     ffmpeg(videoAbsolutePath)
       .on("end", () =>
-        resolve(`/assets/uploads/img/${filename}`)
+        resolve(filename)
       )
       .on("error", reject)
       .screenshots({

@@ -1,29 +1,50 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
 const UPLOAD_DIR = path.join(__dirname, "../assets/uploads/videos");
+const THUMBNAIL_DIR = path.join(__dirname, "../assets/uploads/img");
 const MAX_SIZE = 500 * 1024 * 1024; // 500 Mo
+const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5 Mo
 const ALLOWED_MIME = [
   "video/mp4",
   "video/webm",
   "video/avi",
   "video/quicktime",
 ];
+const ALLOWED_IMAGE_MIME = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
 
-
-// multer.diskStorage : ou et comment stocker les fichiers sur le disque
-const storage = multer.diskStorage({
-  // calback de Multer cb - destination ou on va stocker le fichier
+// multer.diskStorage pour les vidéos
+const videoStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  // filename : le nom à utiliser pour le fichier 
   filename: (req, file, cb) => {
-    // originalname : on garde le title d'origine 
     cb(null, file.originalname);
   },
 });
 
-// vérification du type MIME grâce à fileFilter option de Multer
-const fileFilter = (req, file, cb) => {
+// multer.diskStorage pour les thumbnails
+const thumbnailStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (!fs.existsSync(THUMBNAIL_DIR)) {
+      fs.mkdirSync(THUMBNAIL_DIR, { recursive: true });
+    }
+    cb(null, THUMBNAIL_DIR);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `thumbnail-${uniqueSuffix}${ext}`);
+  },
+});
+
+// vérification du type MIME pour les vidéos
+const videoFileFilter = (req, file, cb) => {
   if (ALLOWED_MIME.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -31,12 +52,24 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Création du middleware Multer encapsulé dans le service
+// vérification du type MIME pour les thumbnails
+const thumbnailFileFilter = (req, file, cb) => {
+  if (ALLOWED_IMAGE_MIME.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Format d'image non supporté"));
+  }
+};
+
+// Création du middleware Multer pour vidéo et thumbnail
 const upload = multer({
-  storage, // fonction storage qui donne le dossier d'enregistrement
+  storage: videoStorage,
   limits: { fileSize: MAX_SIZE },
-  fileFilter,
-}).single("video"); // la requete n'accepte qu'un seul fichier donc une video à la fois
+  fileFilter: videoFileFilter,
+}).fields([
+  { name: 'video', maxCount: 1 },
+  { name: 'thumbnail', maxCount: 1 }
+]);
 
 const uploadVideoService = {
 
@@ -47,12 +80,12 @@ const uploadVideoService = {
           if (err.code === "LIMIT_FILE_SIZE") {
             return reject({
               status: 400,
-              message: "Vidéo trop volumineuse (max 500 Mo).",
+              message: "Fichier trop volumineux.",
             });
           }
           return reject({ status: 400, message: err.message });
         }
-        if (!req.file) {
+        if (!req.files || !req.files.video || !req.files.video[0]) {
           return reject({
             status: 400,
             message: "Aucun fichier vidéo fourni.",
@@ -60,8 +93,15 @@ const uploadVideoService = {
         }
 
         // Chemin relatif pour DB
-        const videoPath = path.join(__dirname, "../assets/uploads/videos", req.file.filename);
-        resolve(videoPath); // renvoie le chemin absolu réel pour ffmpeg
+        const videoPath = path.join(__dirname, "../assets/uploads/videos", req.files.video[0].filename);
+        
+        // Si un thumbnail a été uploadé, le traiter
+        let thumbnailPath = null;
+        if (req.files.thumbnail && req.files.thumbnail[0]) {
+          thumbnailPath = req.files.thumbnail[0].filename;
+        }
+        
+        resolve({ videoPath, thumbnailPath }); // renvoie les chemins
       });
     });
   },

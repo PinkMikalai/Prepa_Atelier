@@ -1,11 +1,11 @@
 const pool = require('../db/index.js');
 
 const Video = {
-  async create({ pseudo, title, description, theme_id, thumbnail }) {
+  async create({ pseudo, title, description, theme_id, thumbnail, video_path }) {
     const [result] = await pool.query(
-      `INSERT INTO videos (pseudo, title, description, theme_id, thumbnail)
-       VALUES (?, ?, ?, ?, ?)`,
-      [pseudo, title, description, theme_id, thumbnail]
+      `INSERT INTO videos (pseudo, title, description, theme_id, thumbnail, video_path)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [pseudo, title, description, theme_id, thumbnail, video_path]
     );
     return result.insertId;
   },

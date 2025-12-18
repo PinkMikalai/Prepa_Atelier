@@ -1,4 +1,6 @@
 const { success } = require('zod');
+const path = require('path');
+const fs = require('fs');
 const { pool, testConnection } = require('../db/index.js');
 const Video = require('../models/videoModel.js');
 const uploadVideoService = require('../services/uploadVideo.service.js');
@@ -68,7 +70,7 @@ async function getVideoById(req, res) {
 async function createVideo(req, res) {
  try {
     // 1️⃣ Multer parse form-data (fichier + champs texte)
-    const absolutePath  = await uploadVideoService.upload(req, res);
+    const { videoPath, thumbnailPath } = await uploadVideoService.upload(req, res);
 
     // 2️⃣ MAINTENANT req.body existe
     const { pseudo, title, description, theme_id } = req.body;
@@ -82,8 +84,9 @@ async function createVideo(req, res) {
     console.log(title);
     console.log(theme_id);
     
-    
-    
+    // Extraire le nom du fichier vidéo depuis le chemin absolu
+    const videoFilename = path.basename(videoPath);
+    console.log('Nom du fichier vidéo:', videoFilename);
 
     // 3️⃣ Vérification doublon titre
     const existing = await Video.findByTitle(title);
@@ -93,16 +96,26 @@ async function createVideo(req, res) {
       });
     }
 
-    // 4️⃣ Génération miniature
-    const thumbnail = await generateThumbnail(absolutePath);
+    // 4️⃣ Gestion de la miniature : utiliser celle uploadée ou générer une
+    let thumbnail;
+    if (thumbnailPath) {
+      // Utiliser la miniature uploadée
+      thumbnail = thumbnailPath;
+      console.log('Miniature uploadée utilisée:', thumbnail);
+    } else {
+      // Générer une miniature depuis la vidéo
+      thumbnail = await generateThumbnail(videoPath);
+      console.log('Miniature générée:', thumbnail);
+    }
 
-    // 5️⃣ DB
+    // 5️⃣ DB - Sauvegarder le nom du fichier vidéo pour lier chaque vidéo à son ID unique
     const id = await Video.create({
       pseudo,
       title,
       description,
       theme_id,
       thumbnail,
+      video_path: videoFilename,
     });
 
     res.status(201).json({
@@ -114,6 +127,7 @@ async function createVideo(req, res) {
         description,
         theme_id,
         thumbnail,
+        video_path: videoFilename,
       },
     });
   } catch (err) {
@@ -174,11 +188,55 @@ async function updateVideo(req, res) {
 function deleteVideo(req, res) {
 }
 
+// Servir le fichier vidéo par ID - utilise video_path depuis la DB pour garantir la bonne vidéo
+async function getVideoFile(req, res) {
+  try {
+    const video = await Video.getVideoById(req.params.id);
+    if (!video) {
+      return res.status(404).json({
+        success: false,
+        message: "Vidéo non trouvée"
+      });
+    }
+
+    // Utiliser video_path depuis la DB pour servir le bon fichier lié à cet ID
+    if (!video.video_path) {
+      return res.status(404).json({
+        success: false,
+        message: "Chemin vidéo non trouvé dans la base de données pour cette vidéo"
+      });
+    }
+
+    const videosDir = path.join(__dirname, './assets/uploads/videos');
+    const videoPath = path.join(videosDir, video.video_path);
+    
+    console.log(`Lecture vidéo ID ${req.params.id} -> fichier: ${video.video_path}`);
+    
+    // Vérifier que le fichier existe
+    if (!fs.existsSync(videoPath)) {
+      console.error(`Fichier vidéo non trouvé: ${videoPath}`);
+      return res.status(404).json({
+        success: false,
+        message: "Fichier vidéo non trouvé sur le serveur"
+      });
+    }
+
+    // Servir le fichier - chaque ID correspond à son propre fichier
+    res.sendFile(videoPath);
+  } catch (error) {
+    console.error("Erreur lors de la récupération du fichier vidéo:", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur lors de la récupération du fichier vidéo"
+    });
+  }
+}
 
 module.exports = { 
     getVideos, 
     getVideoById, 
     createVideo, 
     updateVideo, 
-    deleteVideo 
+    deleteVideo,
+    getVideoFile
 };

@@ -7,6 +7,7 @@ const router = Router();
 
 
 router.get("/", videoController.getVideos);
+router.get("/:id/file", videoController.getVideoFile);
 router.get("/:id", videoController.getVideoById);
 router.post("/", videoController.createVideo);
 router.put("/:id", videoController.updateVideo);
