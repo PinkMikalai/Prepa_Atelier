@@ -1,4 +1,6 @@
 const { success } = require('zod');
+const path = require('path');
+const fs = require('fs');
 const { pool, testConnection } = require('../db/index.js');
 const Video = require('../models/videoModel.js');
 const uploadVideoService = require('../services/uploadVideo.service.js');

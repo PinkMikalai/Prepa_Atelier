@@ -1,25 +1,25 @@
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/up/videos'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/up'
 
 function VideoMeta({ video, isDarkMode }) {
   const [userRating, setUserRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
   const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState('')
-  const [newPseudo, setNewPseudo] = useState('') // Ajout du state pour le pseudo
+  const [newPseudo, setNewPseudo] = useState('') // State pour le pseudo
   const [videoRatings, setVideoRatings] = useState({})
   const [videoComments, setVideoComments] = useState({})
 
   // Fonction pour charger les commentaires d'une vidéo
   const fetchComments = async (videoId) => {
     try {
-      // Utiliser la nouvelle route : /comments/videos/:video_id
+      // Utiliser la route backend : /comments/videos/:video_id
       const response = await fetch(`${API_BASE_URL}/comments/videos/${videoId}`)
       const data = await response.json()
       
-      // Le backend retourne { comments, countComments } (pas de success)
+      // Le backend retourne { comments, countComments }
       const commentsList = data.comments || []
       setVideoComments(prev => ({
         ...prev,
@@ -59,6 +59,9 @@ function VideoMeta({ video, isDarkMode }) {
   // Charger les commentaires et notes quand la vidéo change
   useEffect(() => {
     if (video?.id) {
+      // Réinitialiser les états locaux pour la nouvelle vidéo
+      setHoverRating(0)
+      
       // Charger les commentaires depuis le state ou l'API
       if (videoComments[video.id]) {
         setComments(videoComments[video.id])
@@ -77,6 +80,7 @@ function VideoMeta({ video, isDarkMode }) {
     } else {
       setComments([])
       setUserRating(0)
+      setHoverRating(0)
     }
   }, [video?.id])
 
@@ -132,7 +136,7 @@ function VideoMeta({ video, isDarkMode }) {
     // Créer le commentaire temporairement pour un feedback immédiat
     const tempComment = {
       id: `temp-${Date.now()}`,
-      content: commentContent, // Utiliser 'content' au lieu de 'text'
+      content: commentContent, // Utiliser 'content' pour correspondre au backend
       created_at: new Date().toISOString(),
       video_id: video.id,
       pseudo: pseudoValue
@@ -148,15 +152,15 @@ function VideoMeta({ video, isDarkMode }) {
     
     // Envoyer le commentaire au backend
     try {
-      const response = await fetch(`${API_BASE_URL}/comments`, {
+      // La route backend est POST /comments/videos/:video_id
+      const response = await fetch(`${API_BASE_URL}/comments/videos/${video.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          video_id: video.id,
           pseudo: pseudoValue,
-          content: commentContent // Utiliser 'content' au lieu de 'text'
+          content: commentContent // Le backend attend 'content', pas 'text'
         })
       })
       
