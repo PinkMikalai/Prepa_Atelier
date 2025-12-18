@@ -166,7 +166,7 @@ async function updateVideo(req, res) {
       title: title ?? existingVideo.title,
       description: description ?? existingVideo.description,
       theme_id: theme_id ?? existingVideo.theme_id,
-      thumbnail
+      thumbnail : thumbnail ?? existingVideo.thumbnail,
     });
 
     res.status(200).json({
@@ -185,7 +185,43 @@ async function updateVideo(req, res) {
 }
 
 //supprimer une video
-function deleteVideo(req, res) {
+async function deleteVideo(req, res) {
+
+  try{
+
+    // l id de la video a supprimer
+    const videoById = req.params.id;
+ 
+    //verifier que la video existe avant de la supprimer
+    const existingVideo = await Video.getVideoById(videoById);
+    if(!existingVideo){
+      return res.status(404).json({
+        success: false,
+        message: "Video non trouvee et ne peu pas etre supprimee"
+      });
+    }
+
+    //suppresion de la video
+    const result = await Video.delete(videoById);
+    
+    
+    res.status(200).json({
+      success: true,
+      message: "Video a ete supprimee avec success",
+      videoId: videoById, //l id de la video supprimee
+    })
+    console.log("video a ete supprimee avec success", result);
+
+
+  }catch(error) {
+    console.log("erreur globale lors de la suppresion de la video", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur lors de la suppression de la video"
+    });
+
+  }
+
 }
 
 // Servir le fichier vidéo par ID - utilise video_path depuis la DB pour garantir la bonne vidéo
