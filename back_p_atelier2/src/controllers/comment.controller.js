@@ -17,10 +17,13 @@ const commentService = require('../services/comment.service.js');
 
  async function addComment(req, res) {
 
-   console.log('req.body reçu:', req.body);
-
   try {
-    const comment = await commentService.addComment(req.body);
+    const data = {
+      pseudo : req.body.pseudo,
+      content : req.body.content,
+      video_id : req.params.video_id
+    }
+    const comment = await commentService.addComment(data);
     res.status(201).json(comment);
   } catch (error) {
     res.status(400).json({ message: error.message });
