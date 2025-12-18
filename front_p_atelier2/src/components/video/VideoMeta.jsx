@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/up'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/up/videos'
 
 function VideoMeta({ video, isDarkMode }) {
   const [userRating, setUserRating] = useState(0)
