@@ -1,3 +1,4 @@
+const { success } = require('zod');
 const { pool, testConnection } = require('../db/index.js');
 const Video = require('../models/videoModel.js');
 const uploadVideoService = require('../services/uploadVideo.service.js');
@@ -77,6 +78,12 @@ async function createVideo(req, res) {
         message: "pseudo, title et theme_id sont obligatoires",
       });
     }
+    console.log(pseudo);
+    console.log(title);
+    console.log(theme_id);
+    
+    
+    
 
     // 3️⃣ Vérification doublon titre
     const existing = await Video.findByTitle(title);
@@ -118,7 +125,49 @@ async function createVideo(req, res) {
 }
 
 //mettre a jour une video
-function updateVideo(req, res) {
+async function updateVideo(req, res) {
+
+  //ma logique 
+  try{
+    // l id de la video a modifier
+    const videoById = req.params.id;
+
+    // on recupere les donnees de la video a modifier
+    const {pseudo, title, description, theme_id, thumbnail} = req.body;
+
+
+
+    // verifier que la video existe
+    const existingVideo = await Video.getVideoById(videoById);
+    if(!existingVideo){
+      return res.status(404).json({
+        success: false,
+        message: "Video non trouvée"
+      });
+    }
+
+    // mise a jour
+    const result = await Video.update(videoById, {
+      pseudo: pseudo ?? existingVideo.pseudo,
+      title: title ?? existingVideo.title,
+      description: description ?? existingVideo.description,
+      theme_id: theme_id ?? existingVideo.theme_id,
+      thumbnail
+    });
+
+    res.status(200).json({
+      success : true,
+      message: "Video a ete modifie",
+      videoId : videoById, //l id de la video modifiee
+    })
+    console.log("video a ete modifie avec success", result);
+  }catch(error){
+    console.log("erreur globale lors de modif catch", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur lors de modification de la video"
+    });
+  }
 }
 
 //supprimer une video
