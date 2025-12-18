@@ -129,42 +129,45 @@ async function updateVideo(req, res) {
 
   //ma logique 
   try{
-    const video = await Video.update(req.params.id);
+    // l id de la video a modifier
+    const videoById = req.params.id;
+
     // on recupere les donnees de la video a modifier
     const {pseudo, title, description, theme_id, thumbnail} = req.body;
-    const videoById = req.params.id;
-    
-    console.log(videoById);
-    
-    if(!title || !description || !theme_id){
-      console.log("title, description et theme_id sont obligatoires");
-      return res.status(400).json({
+
+
+
+    // verifier que la video existe
+    const existingVideo = await Video.getVideoById(videoById);
+    if(!existingVideo){
+      return res.status(404).json({
         success: false,
-        message: "title, description et theme_id sont obligatoires"
+        message: "Video non trouvée"
       });
     }
-   
-    console.log(videoById);
+
+    // mise a jour
+    const result = await Video.update(videoById, {
+      pseudo: pseudo ?? existingVideo.pseudo,
+      title: title ?? existingVideo.title,
+      description: description ?? existingVideo.description,
+      theme_id: theme_id ?? existingVideo.theme_id,
+      thumbnail
+    });
+
     res.status(200).json({
-      success : false,
+      success : true,
       message: "Video a ete modifie",
-      video : video
+      videoId : videoById, //l id de la video modifiee
     })
-    console.log(video, "video a ete modifie avec success");
-   
+    console.log("video a ete modifie avec success", result);
   }catch(error){
-
-    //on affiche l erreur sur cmder
     console.log("erreur globale lors de modif catch", error);
-    //on affiche l erreur sur le client
-    return res.status(404).json({
+    res.status(500).json({
       success: false,
-      message : "Erreur lors de modification de video"
-    })
-
+      message: "Erreur lors de modification de la video"
+    });
   }
-
-
 }
 
 //supprimer une video

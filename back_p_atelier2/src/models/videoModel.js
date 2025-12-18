@@ -32,7 +32,7 @@ const Video = {
 
 
   //ici je gere mon update de mon video
-  async update({pseudo, title, description, theme_id, thumbnail}){
+  async update(id, {pseudo, title, description, theme_id, thumbnail}){
 
     const [result] = await pool.query(
       `UPDATE videos SET pseudo = ?, title = ?, description = ?, theme_id = ?, thumbnail = ? WHERE id = ?`,
