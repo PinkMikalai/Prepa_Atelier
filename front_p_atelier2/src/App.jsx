@@ -1,20 +1,41 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import logo from './assets/images/logo.png'
+import VideoCard from './components/video/VideoCard'
+import VideoPlayer from './components/video/VideoPlayer'
+import VideoMeta from './components/video/VideoMeta'
+import UploadForm from './components/upload/UploadForm'
+
+// Configuration API
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/up'
+const UPLOADS_BASE_URL = 'http://localhost:3000/uploads' // URL pour les fichiers uploadés
+
+// Mapping des thèmes vers leurs IDs (vous devrez adapter selon votre base de données)
+const themeMapping = {
+  'Humour': 1,
+  'Drame': 2,
+  'Thriller': 3,
+  'Suspense': 4,
+  'Horreur': 5,
+  'Romance': 6,
+  'Science-fiction': 7,
+  'Fantastique': 8,
+  'Documentaire': 9,
+  'Animation': 10,
+  'Expérimentale': 11,
+  'Aventure': 12,
+  'Action': 13,
+  'Motivation': 14,
+  'Parodie': 15,
+  'Clip': 16,
+  'DIY': 17
+}
 
 function App() {
   const [currentView, setCurrentView] = useState('list') // 'list', 'upload', 'detail'
   const [selectedVideo, setSelectedVideo] = useState(null)
   const [videos, setVideos] = useState([]) // Tableau vide au départ
-  const [userRating, setUserRating] = useState(0) // Note de l'utilisateur (0-5)
-  const [hoverRating, setHoverRating] = useState(0) // Note au survol
-  const [comments, setComments] = useState([]) // Liste des commentaires
-  const [newComment, setNewComment] = useState('') // Nouveau commentaire en cours de saisie
-  const [videoProgress, setVideoProgress] = useState(0) // Progression upload vidéo (0-100)
-  const [thumbnailProgress, setThumbnailProgress] = useState(0) // Progression upload miniature (0-100)
-  const [isUploadingVideo, setIsUploadingVideo] = useState(false) // État upload vidéo
-  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false) // État upload miniature
-  const [selectedTheme, setSelectedTheme] = useState('') // Thème sélectionné
+  const [isLoadingVideos, setIsLoadingVideos] = useState(false) // État de chargement des vidéos
   const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false) // État ouverture menu déroulant
   const themeDropdownRef = useRef(null) // Référence pour le menu déroulant
   const [selectedFilterTheme, setSelectedFilterTheme] = useState('') // Thème filtré dans le header
@@ -27,6 +48,47 @@ function App() {
   const filterNoteRef = useRef(null) // Référence pour le menu Note
   const filterDateRef = useRef(null) // Référence pour le menu Date
   const [isDarkMode, setIsDarkMode] = useState(true) // Mode dark/light (par défaut dark)
+
+  // Charger les vidéos au démarrage
+  useEffect(() => {
+    fetchVideos()
+  }, [])
+
+  // Fonction pour récupérer toutes les vidéos
+  const fetchVideos = async () => {
+    setIsLoadingVideos(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/videos`)
+      const data = await response.json()
+      
+      if (data.success) {
+        console.log('Vidéos reçues:', data.videos) // Debug
+        // Mapper les vidéos pour s'assurer qu'elles ont les bons champs
+        const mappedVideos = (data.videos || []).map(video => {
+          // Extraire le nom du fichier thumbnail si c'est un chemin complet
+          let thumbnailName = video.thumbnail || video.thumbnail_path || video.thumbnail_url
+          if (thumbnailName && thumbnailName.includes('/')) {
+            thumbnailName = thumbnailName.split('/').pop()
+          }
+          
+          return {
+            ...video,
+            // Si video_path n'existe pas, essayer d'autres noms possibles
+            video_path: video.video_path || video.video_url || video.filename || video.file_name,
+            // S'assurer que thumbnail existe (juste le nom du fichier)
+            thumbnail: thumbnailName
+          }
+        })
+        setVideos(mappedVideos)
+      } else {
+        console.error('Erreur lors de la récupération des vidéos:', data.message)
+      }
+    } catch (error) {
+      console.error('Erreur API lors du chargement des vidéos:', error)
+    } finally {
+      setIsLoadingVideos(false)
+    }
+  }
 
   // Fermer les menus déroulants quand on clique en dehors
   useEffect(() => {
@@ -90,90 +152,41 @@ function App() {
     { value: 'month', label: 'Ce mois' }
   ]
 
-  const handleVideoClick = (video) => {
+  const handleVideoClick = async (video) => {
     setSelectedVideo(video)
     setCurrentView('detail')
-    setUserRating(0) // Réinitialiser la note lors du changement de vidéo
-    setHoverRating(0)
-  }
-
-  const handleStarClick = (rating) => {
-    setUserRating(rating)
-    // Ici vous pourrez envoyer la note au backend
-  }
-
-  const handleStarHover = (rating) => {
-    setHoverRating(rating)
-  }
-
-  const handleStarLeave = () => {
-    setHoverRating(0)
-  }
-
-  const handleAddComment = (e) => {
-    e.preventDefault()
-    if (newComment.trim()) {
-      const comment = {
-        id: Date.now(),
-        text: newComment.trim(),
-        date: new Date().toLocaleDateString('fr-FR')
-      }
-      setComments([...comments, comment])
-      setNewComment('')
-      // Ici vous pourrez envoyer le commentaire au backend
-    }
-  }
-
-  const simulateUpload = (type) => {
-    if (type === 'video') {
-      setIsUploadingVideo(true)
-      setVideoProgress(0)
-      const interval = setInterval(() => {
-        setVideoProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval)
-            setIsUploadingVideo(false)
-            return 100
-          }
-          return prev + 10
-        })
-      }, 200)
-    } else if (type === 'thumbnail') {
-      setIsUploadingThumbnail(true)
-      setThumbnailProgress(0)
-      const interval = setInterval(() => {
-        setThumbnailProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval)
-            setIsUploadingThumbnail(false)
-            return 100
-          }
-          return prev + 10
-        })
-      }, 200)
-    }
-  }
-
-  const renderStars = (rating, interactive = false) => {
-    const displayRating = interactive ? (hoverRating || userRating) : rating
-    return [...Array(5)].map((_, i) => {
-      const starValue = i + 1
-      const isFilled = starValue <= displayRating
+    
+    // Optionnel : Recharger les détails depuis l'API pour avoir les données à jour
+    try {
+      const response = await fetch(`${API_BASE_URL}/videos/${video.id}`)
+      const data = await response.json()
       
-      return (
-        <svg 
-          key={i} 
-          className={`size-6 lg:size-7 shrink-0 ${interactive ? 'cursor-pointer transition-transform hover:scale-110' : ''}`}
-          fill={isFilled ? "#FFD700" : "#696D74"} 
-          viewBox="0 0 24 24"
-          onClick={interactive ? () => handleStarClick(starValue) : undefined}
-          onMouseEnter={interactive ? () => handleStarHover(starValue) : undefined}
-          onMouseLeave={interactive ? handleStarLeave : undefined}
-        >
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-        </svg>
-      )
-    })
+      if (data.success && data.video) {
+        // Mapper la vidéo pour s'assurer qu'elle a les bons champs
+        let thumbnailName = data.video.thumbnail || data.video.thumbnail_path || data.video.thumbnail_url
+        if (thumbnailName && thumbnailName.includes('/')) {
+          thumbnailName = thumbnailName.split('/').pop()
+        }
+        
+        const mappedVideo = {
+          ...data.video,
+          video_path: data.video.video_path || data.video.video_url || data.video.filename || data.video.file_name,
+          thumbnail: thumbnailName
+        }
+        console.log('Vidéo sélectionnée:', mappedVideo) // Debug
+        setSelectedVideo(mappedVideo)
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des détails de la vidéo:', error)
+    }
+  }
+
+  const handleUploadSuccess = async () => {
+    // Recharger la liste des vidéos
+    await fetchVideos()
+    // Retourner à la liste
+    setCurrentView('list')
+    alert('Vidéo uploadée avec succès !')
   }
 
   return (
@@ -466,36 +479,24 @@ function App() {
         <div className="flex-1 overflow-auto">
           {currentView === 'list' && (
             <div className="p-4 lg:p-8 xl:p-12 w-full">
-              {videos.length === 0 ? (
+              {isLoadingVideos ? (
                 <div className="text-center py-20">
-                  <p className="text-mozi-grey text-lg lg:text-xl mb-4">Aucune vidéo disponible</p>
-                  <p className="text-mozi-grey-light text-sm lg:text-base">Utilisez le bouton Upload pour ajouter une vidéo</p>
+                  <p className={`text-lg lg:text-xl mb-4 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Chargement des vidéos...</p>
+                </div>
+              ) : videos.length === 0 ? (
+                <div className="text-center py-20">
+                  <p className={`text-lg lg:text-xl mb-4 ${isDarkMode ? 'text-mozi-grey' : 'text-gray-600'}`}>Aucune vidéo disponible</p>
+                  <p className={`text-sm lg:text-base ${isDarkMode ? 'text-mozi-grey-light' : 'text-gray-500'}`}>Utilisez le bouton Upload pour ajouter une vidéo</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 lg:gap-6 xl:gap-8">
                   {videos.map((video) => (
-                    <div 
+                    <VideoCard
                       key={video.id}
-                      onClick={() => handleVideoClick(video)}
-                      className={`rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 ${
-                        isDarkMode ? 'bg-mozi-black' : 'bg-white border border-gray-200 shadow-sm'
-                      }`}
-                    >
-                      <div className={`aspect-video flex items-center justify-center ${
-                        isDarkMode ? 'bg-mozi-black-light' : 'bg-gray-100'
-                      }`}>
-                        <svg className={`size-12 lg:size-16 ${isDarkMode ? 'text-mozi-grey' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                      </div>
-                      <div className="p-3 lg:p-4">
-                        <h3 className={`font-medium mb-2 line-clamp-2 text-sm lg:text-base ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{video.title}</h3>
-                        <p className={`text-xs lg:text-sm mb-2 ${isDarkMode ? 'text-mozi-grey' : 'text-gray-600'}`}>{video.theme}</p>
-                        <div className="flex items-center gap-1.5">
-                          {renderStars(video.rating)}
-                        </div>
-                      </div>
-                    </div>
+                      video={video}
+                      onClick={handleVideoClick}
+                      isDarkMode={isDarkMode}
+                    />
                   ))}
                 </div>
               )}
@@ -503,256 +504,43 @@ function App() {
           )}
 
           {currentView === 'upload' && (
-            <div className="p-4 lg:p-5 xl:p-6 max-w-7xl mx-auto w-full">
-              <div className={`rounded-xl p-4 lg:p-5 xl:p-6 shadow-lg ${
-                isDarkMode ? 'bg-mozi-black' : 'bg-white'
-              }`}>
-                <h2 className="text-lg lg:text-xl xl:text-2xl font-semibold text-mozi-black mb-3 lg:mb-4">Upload de vidéo</h2>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                  {/* Colonne gauche - Champs texte */}
-                  <div className="space-y-3 lg:space-y-4">
-                    <div>
-                      <label className={`block text-sm font-medium mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Titre de la vidéo</label>
-                      <input 
-                        type="text" 
-                        placeholder="Value" 
-                        className="w-full px-3 py-2 border border-mozi-grey-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-mozi-active"
-                      />
-                    </div>
-                    <div className="relative" ref={themeDropdownRef}>
-                      <label className="block text-sm font-medium text-mozi-black mb-1.5">Theme de la vidéo</label>
-                      <button
-                        type="button"
-                        onClick={() => setIsThemeDropdownOpen(!isThemeDropdownOpen)}
-                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 text-left flex items-center justify-between ${
-                          isDarkMode 
-                            ? 'border-mozi-grey-light bg-mozi-black-light focus:ring-offset-mozi-black' 
-                            : 'border-gray-300 bg-white focus:ring-offset-white'
-                        }`}
-                      >
-                        <span className={selectedTheme ? (isDarkMode ? 'text-white' : 'text-gray-800') : (isDarkMode ? 'text-mozi-grey' : 'text-gray-500')}>
-                          {selectedTheme || 'Sélectionnez un thème'}
-                        </span>
-                        <svg 
-                          className={`w-4 h-4 transition-transform duration-300 ${isThemeDropdownOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-mozi-grey' : 'text-gray-500'}`}
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                      <div 
-                        className={`absolute z-10 w-full mt-1 border rounded-lg shadow-lg max-h-60 overflow-auto transition-all duration-300 ease-in-out ${
-                          isDarkMode 
-                            ? 'bg-mozi-black border-mozi-grey-light' 
-                            : 'bg-white border-gray-300'
-                        } ${
-                          isThemeDropdownOpen 
-                            ? 'opacity-100 translate-y-0 visible' 
-                            : 'opacity-0 -translate-y-2 invisible'
-                        }`}
-                      >
-                        <div className="py-1">
-                          {themes.map((theme) => (
-                            <button
-                              key={theme}
-                              type="button"
-                              onClick={() => {
-                                setSelectedTheme(theme)
-                                setIsThemeDropdownOpen(false)
-                              }}
-                              className={`w-full text-left px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${
-                                isDarkMode 
-                                  ? `hover:bg-mozi-black-light ${selectedTheme === theme ? 'bg-mozi-active/10 text-mozi-active font-medium' : 'text-white'}`
-                                  : `hover:bg-gray-100 ${selectedTheme === theme ? 'bg-mozi-active/10 text-mozi-active font-medium' : 'text-gray-800'}`
-                              }`}
-                            >
-                              {theme}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <label className={`block text-sm font-medium mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Description de la video</label>
-                      <textarea 
-                        placeholder="Value" 
-                        rows="4"
-                        className="w-full px-3 py-2 border border-mozi-grey-light rounded-lg resize-none text-sm focus:outline-none focus:ring-2 focus:ring-mozi-active"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Colonne droite - Zones d'upload */}
-                  <div className="space-y-3 lg:space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-mozi-black mb-1.5">upload de la video</label>
-                      <div 
-                        onClick={() => simulateUpload('video')}
-                        className={`w-full h-32 lg:h-40 xl:h-48 border-2 border-dashed rounded-lg flex items-center justify-center transition-all cursor-pointer ${
-                          isDarkMode 
-                            ? 'border-mozi-grey-light bg-mozi-grey-light/10 hover:bg-mozi-grey-light/20' 
-                            : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
-                        }`}
-                      >
-                        <div className="text-center">
-                          <svg className={`size-10 lg:size-12 mx-auto mb-1.5 ${isDarkMode ? 'text-mozi-grey' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                          </svg>
-                          <p className={`text-xs ${isDarkMode ? 'text-mozi-grey' : 'text-gray-500'}`}>Cliquez pour uploader</p>
-                        </div>
-                      </div>
-                      {isUploadingVideo && (
-                        <div role="progressbar" aria-valuenow={videoProgress} aria-valuemin="0" aria-valuemax="100" className="mt-2">
-                          <div className="flex justify-between gap-4">
-                            <span className="text-sm font-medium text-mozi-black">Uploading video</span>
-                            <span className="text-sm font-medium text-mozi-black">{videoProgress}%</span>
-                          </div>
-                          <div className="mt-2 h-2 w-full rounded-full bg-mozi-grey-light/30">
-                            <div 
-                              className="h-full rounded-full bg-mozi-active transition-all duration-300" 
-                              style={{ width: `${videoProgress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label className={`block text-sm font-medium mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>upload de la miniature</label>
-                      <div 
-                        onClick={() => simulateUpload('thumbnail')}
-                        className={`w-full h-32 lg:h-40 xl:h-48 border-2 border-dashed rounded-lg flex items-center justify-center transition-all cursor-pointer ${
-                          isDarkMode 
-                            ? 'border-mozi-grey-light bg-mozi-grey-light/10 hover:bg-mozi-grey-light/20' 
-                            : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
-                        }`}
-                      >
-                        <div className="text-center">
-                          <svg className={`size-10 lg:size-12 mx-auto mb-1.5 ${isDarkMode ? 'text-mozi-grey' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          <p className={`text-xs ${isDarkMode ? 'text-mozi-grey' : 'text-gray-500'}`}>Cliquez pour uploader</p>
-                        </div>
-                      </div>
-                      {isUploadingThumbnail && (
-                        <div role="progressbar" aria-valuenow={thumbnailProgress} aria-valuemin="0" aria-valuemax="100" className="mt-2">
-                          <div className="flex justify-between gap-4">
-                            <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Uploading thumbnail</span>
-                            <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{thumbnailProgress}%</span>
-                          </div>
-                          <div className="mt-2 h-2 w-full rounded-full bg-mozi-grey-light/30">
-                            <div 
-                              className="h-full rounded-full bg-mozi-active transition-all duration-300" 
-                              style={{ width: `${thumbnailProgress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Boutons */}
-                <div className="flex justify-center gap-4 mt-4 lg:mt-6">
-                  <button 
-                    onClick={() => setCurrentView('list')}
-                    className="bg-mozi-grey text-white px-5 lg:px-6 py-2 rounded-lg hover:bg-mozi-black transition-all text-sm font-medium focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 focus:ring-offset-white"
-                  >
-                    Annuler
-                  </button>
-                  <button className="bg-mozi-black text-white px-5 lg:px-6 py-2 rounded-lg hover:bg-mozi-black-light transition-all text-sm font-medium focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 focus:ring-offset-white">
-                    Publier la vidéo
-                  </button>
-                </div>
-              </div>
+            <div className="p-4 lg:p-5 xl:p-6 w-full">
+              <UploadForm
+                onUploadSuccess={handleUploadSuccess}
+                isDarkMode={isDarkMode}
+                themeDropdownRef={themeDropdownRef}
+                isThemeDropdownOpen={isThemeDropdownOpen}
+                setIsThemeDropdownOpen={setIsThemeDropdownOpen}
+              />
             </div>
           )}
 
           {currentView === 'detail' && selectedVideo && (
             <div className="p-4 lg:p-8 xl:p-12 w-full">
+              {/* Bouton Retour à l'accueil */}
               <button 
-                onClick={() => setCurrentView('list')}
-                className="mb-6 lg:mb-8 text-mozi-grey-light hover:text-white transition-all flex items-center gap-2 text-sm lg:text-base focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 focus:ring-offset-mozi-black-light rounded"
+                onClick={() => {
+                  setCurrentView('list')
+                  setSelectedVideo(null)
+                }}
+                className={`mb-6 lg:mb-8 flex items-center gap-2 px-4 py-2 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 ${
+                  isDarkMode 
+                    ? 'bg-mozi-black-light text-white hover:bg-mozi-grey-light/20 border border-mozi-grey-light/30' 
+                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300'
+                }`}
               >
                 <svg className="size-5 lg:size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Retour
+                <span className="font-medium text-sm lg:text-base">Retour à l'accueil</span>
               </button>
               
               <div className="space-y-6 lg:space-y-8">
                 {/* Lecteur vidéo */}
-                <div className="bg-mozi-black rounded-xl overflow-hidden">
-                  <div className="aspect-video bg-mozi-black-light flex items-center justify-center">
-                    <svg className="size-24 lg:size-32 text-mozi-grey" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </div>
-                </div>
+                <VideoPlayer video={selectedVideo} isDarkMode={isDarkMode} />
 
-                {/* Informations vidéo */}
-                <div className="bg-mozi-black rounded-xl p-6 lg:p-8">
-                  <h1 className="text-2xl lg:text-3xl xl:text-4xl font-semibold text-white mb-3 lg:mb-4">{selectedVideo.title}</h1>
-                  <p className="text-mozi-grey mb-4 lg:mb-6 text-base lg:text-lg">{selectedVideo.theme}</p>
-                  <p className="text-white mb-6 lg:mb-8 text-base lg:text-lg leading-relaxed">{selectedVideo.description}</p>
-                  
-                  {/* Système de notation */}
-                  <div className="border-t border-mozi-black-light pt-6 lg:pt-8 mb-6 lg:mb-8">
-                    <h3 className="text-white font-medium mb-4 lg:mb-6 text-lg lg:text-xl">Noter cette vidéo</h3>
-                    <div className="flex items-center gap-2">
-                      {renderStars(selectedVideo.rating || 0, true)}
-                      {userRating > 0 && (
-                        <span className="text-mozi-grey-light text-sm lg:text-base ml-2">
-                          Vous avez noté {userRating}/5
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Formulaire de commentaire */}
-                  <div className="border-t border-mozi-black-light pt-6 lg:pt-8">
-                    <h3 className="text-white font-medium mb-4 lg:mb-6 text-lg lg:text-xl">Ajouter un commentaire</h3>
-                    <form onSubmit={handleAddComment} className="mb-6 lg:mb-8">
-                      <div className="flex gap-3 lg:gap-4">
-                        <input
-                          type="text"
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          placeholder="Écrivez votre commentaire..."
-                          className="flex-1 bg-mozi-black-light text-white placeholder-mozi-grey rounded-lg px-4 lg:px-5 py-3 lg:py-4 focus:outline-none focus:ring-2 focus:ring-mozi-active text-sm lg:text-base"
-                        />
-                        <button
-                          type="submit"
-                          disabled={!newComment.trim()}
-                          className="bg-mozi-active text-white px-6 lg:px-8 py-3 lg:py-4 rounded-lg hover:bg-mozi-active/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base font-medium focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 focus:ring-offset-mozi-black"
-                        >
-                          Publier
-                        </button>
-                      </div>
-                    </form>
-                    
-                    {/* Liste des commentaires */}
-                    <div>
-                      <h3 className="text-white font-medium mb-4 lg:mb-6 text-lg lg:text-xl">
-                        Commentaires {comments.length > 0 && `(${comments.length})`}
-                      </h3>
-                      {comments.length === 0 ? (
-                        <p className="text-mozi-grey text-sm lg:text-base">Aucun commentaire pour le moment. Soyez le premier à commenter !</p>
-                      ) : (
-                        <div className="space-y-4 lg:space-y-6">
-                          {comments.map((comment) => (
-                            <div key={comment.id} className="bg-mozi-black-light rounded-lg p-4 lg:p-5">
-                              <p className="text-white text-sm lg:text-base mb-2">{comment.text}</p>
-                              <p className="text-mozi-grey text-xs lg:text-sm">{comment.date}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {/* Informations vidéo avec ses commentaires et notes uniques */}
+                <VideoMeta video={selectedVideo} isDarkMode={isDarkMode} />
               </div>
             </div>
           )}
