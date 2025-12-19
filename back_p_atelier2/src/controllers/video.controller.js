@@ -188,6 +188,23 @@ async function updateVideo(req, res) {
 function deleteVideo(req, res) {
 }
 
+
+
+async function addView(req, res) {
+    try {
+        const video_id = req.params.video_id;
+        const result = await videoService.addView(video_id);
+
+        if (!result.success) return res.status(404).json(result);
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Erreur serveur" });
+    }
+}
+
+
 // Servir le fichier vidéo par ID - utilise video_path depuis la DB pour garantir la bonne vidéo
 async function getVideoFile(req, res) {
   try {
@@ -238,5 +255,6 @@ module.exports = {
     createVideo, 
     updateVideo, 
     deleteVideo,
-    getVideoFile
+    getVideoFile, 
+    addView
 };

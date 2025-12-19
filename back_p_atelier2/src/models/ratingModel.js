@@ -10,10 +10,28 @@ const Rating = {
             [video_id, rating]
         );
         return result.insertId
-    }
+    },
 
+    async ratingByVideo({ video_id }) {
+    const [rows] = await pool.query(
+        `SELECT rating FROM ratings WHERE video_id = ?`,
+        [video_id]
+    );
+    return rows;
+    },
+
+    async incrementViews(video_id) {
+    await pool.query(
+        `UPDATE videos 
+         SET views = views + 1, updated_at = NOW()
+         WHERE id = ?`,
+        [video_id]
+    );
+    }
 }
 
 module.exports = {
-    createRatingModel : Rating.create
+    createRatingModel : Rating.create,
+    ratingByVideo : Rating.ratingByVideo,
+    incrementViews : Rating.incrementViews
 }
