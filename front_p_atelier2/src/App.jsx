@@ -54,6 +54,16 @@ function App() {
     fetchVideos()
   }, [])
 
+  // Fonction pour mélanger aléatoirement un tableau (algorithme Fisher-Yates)
+  const shuffleArray = (array) => {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+  }
+
   // Fonction pour récupérer toutes les vidéos
   const fetchVideos = async () => {
     setIsLoadingVideos(true)
@@ -231,7 +241,7 @@ function App() {
       {/* Zone Principale */}
       <main className={`flex-1 flex flex-col w-full ${isDarkMode ? 'bg-mozi-black-light' : 'bg-gray-50'}`}>
         {/* Header avec recherche */}
-        {currentView === 'list' && (
+        {(currentView === 'list' || currentView === 'detail') && (
           <header className={`p-4 lg:p-6 border-b w-full ${isDarkMode ? 'bg-mozi-black-light border-mozi-black' : 'bg-white border-gray-200'}`}>
             <div className="flex items-center gap-4 w-full px-4 lg:px-8">
               <button className={`p-2 rounded-lg transition-all lg:hidden focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 ${isDarkMode ? 'hover:bg-mozi-black focus:ring-offset-mozi-black-light' : 'hover:bg-gray-200 focus:ring-offset-white'}`}>
@@ -516,32 +526,116 @@ function App() {
           )}
 
           {currentView === 'detail' && selectedVideo && (
-            <div className="p-4 lg:p-8 xl:p-12 w-full">
-              {/* Bouton Retour à l'accueil */}
-              <button 
-                onClick={() => {
-                  setCurrentView('list')
-                  setSelectedVideo(null)
-                }}
-                className={`mb-6 lg:mb-8 flex items-center gap-2 px-4 py-2 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 ${
-                  isDarkMode 
-                    ? 'bg-mozi-black-light text-white hover:bg-mozi-grey-light/20 border border-mozi-grey-light/30' 
-                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300'
-                }`}
-              >
-                <svg className="size-5 lg:size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                <span className="font-medium text-sm lg:text-base">Retour à l'accueil</span>
-              </button>
-              
-              <div className="space-y-6 lg:space-y-8">
-                {/* Lecteur vidéo */}
-                <VideoPlayer video={selectedVideo} isDarkMode={isDarkMode} />
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 xl:gap-8 w-full h-full">
+              {/* Contenu principal avec la vidéo sélectionnée */}
+              <div className="flex-1 p-4 lg:p-8 xl:p-12 min-w-0 w-full lg:w-auto">
+                {/* Bouton Retour à l'accueil */}
+                <button 
+                  onClick={() => {
+                    setCurrentView('list')
+                    setSelectedVideo(null)
+                  }}
+                  className={`mb-6 lg:mb-8 flex items-center gap-2 px-4 py-2 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 ${
+                    isDarkMode 
+                      ? 'bg-mozi-black-light text-white hover:bg-mozi-grey-light/20 border border-mozi-grey-light/30' 
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300'
+                  }`}
+                >
+                  <svg className="size-5 lg:size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span className="font-medium text-sm lg:text-base">Retour à l'accueil</span>
+                </button>
+                
+                <div className="space-y-6 lg:space-y-8">
+                  {/* Lecteur vidéo */}
+                  <VideoPlayer video={selectedVideo} isDarkMode={isDarkMode} />
 
-                {/* Informations vidéo avec ses commentaires et notes uniques */}
-                <VideoMeta video={selectedVideo} isDarkMode={isDarkMode} />
+                  {/* Informations vidéo avec ses commentaires et notes uniques */}
+                  <VideoMeta video={selectedVideo} isDarkMode={isDarkMode} />
+                </div>
               </div>
+
+              {/* Sidebar droite avec la liste des autres vidéos */}
+              <aside className={`w-full lg:w-56 xl:w-64 2xl:w-72 shrink-0 p-4 lg:p-6 overflow-y-auto border-t lg:border-t-0 lg:border-l ${
+                isDarkMode 
+                  ? 'bg-mozi-black-light border-mozi-black' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <h2 className={`text-base lg:text-lg font-semibold mb-4 lg:mb-6 ${
+                  isDarkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  Autres vidéos
+                </h2>
+                {isLoadingVideos ? (
+                  <div className="text-center py-8">
+                    <p className={`text-sm ${isDarkMode ? 'text-mozi-grey' : 'text-gray-600'}`}>Chargement...</p>
+                  </div>
+                ) : videos.filter(v => v.id !== selectedVideo.id).length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className={`text-sm ${isDarkMode ? 'text-mozi-grey' : 'text-gray-600'}`}>Aucune autre vidéo</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 lg:space-y-0 lg:space-y-4">
+                    {videos
+                      .filter(v => v.id !== selectedVideo.id)
+                      .map((video) => (
+                        <div
+                          key={video.id}
+                          onClick={() => handleVideoClick(video)}
+                          className={`flex flex-col lg:flex-row gap-2 lg:gap-3 rounded-lg overflow-hidden cursor-pointer hover:bg-opacity-80 transition-all duration-200 ${
+                            isDarkMode ? 'bg-mozi-black' : 'bg-white border border-gray-200 shadow-sm'
+                          }`}
+                        >
+                          {/* Miniature */}
+                          <div className={`w-full lg:w-24 xl:w-28 2xl:w-32 aspect-video lg:h-16 xl:h-20 2xl:h-24 flex-shrink-0 flex items-center justify-center relative overflow-hidden rounded ${
+                            isDarkMode ? 'bg-mozi-black-light' : 'bg-gray-100'
+                          }`}>
+                            {video.thumbnail ? (
+                              <img 
+                                src={`${UPLOADS_BASE_URL}/img/${video.thumbnail}`} 
+                                alt={video.title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none'
+                                }}
+                              />
+                            ) : null}
+                            <div className={`absolute inset-0 flex items-center justify-center ${video.thumbnail ? 'bg-black/30' : ''}`}>
+                              <svg className={`size-4 lg:size-5 ${isDarkMode ? 'text-white' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            </div>
+                          </div>
+                          {/* Titre et notations */}
+                          <div className="flex-1 flex flex-col justify-between py-1.5 lg:py-2 min-w-0 px-2 lg:px-0">
+                            <h3 className={`font-medium line-clamp-2 text-xs lg:text-sm ${
+                              isDarkMode ? 'text-white' : 'text-gray-800'
+                            }`}>
+                              {video.title}
+                            </h3>
+                            <div className="flex items-center gap-0.5 lg:gap-1 mt-1">
+                              {[...Array(5)].map((_, i) => {
+                                const starValue = i + 1
+                                const isFilled = starValue <= (video.rating || 0)
+                                return (
+                                  <svg 
+                                    key={i} 
+                                    className="size-3 lg:size-3.5 shrink-0"
+                                    fill={isFilled ? "#FFD700" : "#696D74"} 
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                  </svg>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </aside>
             </div>
           )}
         </div>
