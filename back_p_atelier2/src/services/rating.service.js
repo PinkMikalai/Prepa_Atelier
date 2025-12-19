@@ -1,6 +1,8 @@
-const { createRating } = require("../controllers/rating.controller");
 const { getVideoById } = require('../models/videoModel.js');
-const { createRatingModel } = require('../models/ratingModel.js')
+const { createRatingModel, ratingByVideo } = require('../models/ratingModel.js');
+const { calculateAverage } = require('../utils/function.js');
+
+
 
 
 const ratingService = {
@@ -50,7 +52,23 @@ const ratingService = {
         
     },
 
+    async getAverageRating({ video_id }) {
+        const video = await getVideoById(video_id);
+        if (!video) return { success: false, message: "La vidéo n'existe pas" };
 
+        const ratings = await ratingByVideo({ video_id });
+        const values = ratings.map(r => r.rating);
+        const average = calculateAverage(values);
+
+        return {
+            success: true,
+            data: {
+                video_id,
+                average,
+                total_ratings: values.length
+            }
+        };
+    }
 
 }
 

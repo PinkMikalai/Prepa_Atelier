@@ -1,6 +1,9 @@
 const Video = require('../models/videoModel.js');
 const uploadVideoService = require('./uploadVideo.service.js');
 const generateThumbnail = require('../utils/generateThumbnail.js');
+const { getVideoById } = require('../models/videoModel.js');
+const { incrementViews } = require('../models/ratingModel.js');
+
 
 const videoService = {
   async createVideo({ pseudo, title, description, theme_id, thumbnail, file }) {
@@ -36,7 +39,22 @@ const videoService = {
 
     const id = await Video.create(videoData);
     return { id, ...videoData };
+  },
+
+  async addView(video_id) {
+      // Vérifier que la vidéo existe
+      const video = await getVideoById(video_id);
+      if (!video) {
+          return { success: false, message: "Vidéo inexistante" };
+      }
+
+      // Incrémenter les vues
+      await incrementViews(video_id);
+
+      return { success: true, message: "Vue ajoutée" };
   }
+
+
 };
 
 module.exports = videoService;
