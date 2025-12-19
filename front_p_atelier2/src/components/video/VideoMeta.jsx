@@ -18,6 +18,7 @@ function VideoMeta({ video, isDarkMode }) {
       // Utiliser la route backend : /comments/videos/:video_id
       const response = await fetch(`${API_BASE_URL}/comments/videos/${videoId}`)
       const data = await response.json()
+      console.log("data comments", data);
       
       // Le backend retourne { comments, countComments }
       const commentsList = data.comments || []

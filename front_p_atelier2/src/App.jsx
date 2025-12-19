@@ -48,6 +48,7 @@ function App() {
   const filterNoteRef = useRef(null) // Référence pour le menu Note
   const filterDateRef = useRef(null) // Référence pour le menu Date
   const [isDarkMode, setIsDarkMode] = useState(true) // Mode dark/light (par défaut dark)
+  const [searchText, setSearchText] = useState('')
 
   // Charger les vidéos au démarrage
   useEffect(() => {
@@ -68,9 +69,19 @@ function App() {
   const fetchVideos = async () => {
     setIsLoadingVideos(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/videos`)
+      const params = new URLSearchParams()
+
+      if (searchText) params.append('search', searchText)
+      if (selectedFilterDate) params.append('date', selectedFilterDate)
+      if (selectedFilterNote) params.append('rating', selectedFilterNote)
+
+      // Conversion Nom du Thème -> ID
+      if (selectedFilterTheme && themeMapping[selectedFilterTheme]) {
+        params.append('theme_id', themeMapping[selectedFilterTheme])
+      }
+      const response = await fetch(`${API_BASE_URL}/videos?${params.toString()}`)
       const data = await response.json()
-      
+
       if (data.success) {
         console.log('Vidéos reçues:', data.videos) // Debug
         // Mapper les vidéos pour s'assurer qu'elles ont les bons champs
@@ -80,7 +91,7 @@ function App() {
           if (thumbnailName && thumbnailName.includes('/')) {
             thumbnailName = thumbnailName.split('/').pop()
           }
-          
+
           return {
             ...video,
             // Si video_path n'existe pas, essayer d'autres noms possibles
@@ -99,6 +110,9 @@ function App() {
       setIsLoadingVideos(false)
     }
   }
+useEffect(() => {
+  fetchVideos()
+}, [searchText, selectedFilterTheme, selectedFilterNote, selectedFilterDate])
 
   // Fermer les menus déroulants quand on clique en dehors
   useEffect(() => {
@@ -165,19 +179,19 @@ function App() {
   const handleVideoClick = async (video) => {
     setSelectedVideo(video)
     setCurrentView('detail')
-    
+
     // Optionnel : Recharger les détails depuis l'API pour avoir les données à jour
     try {
       const response = await fetch(`${API_BASE_URL}/videos/${video.id}`)
       const data = await response.json()
-      
+
       if (data.success && data.video) {
         // Mapper la vidéo pour s'assurer qu'elle a les bons champs
         let thumbnailName = data.video.thumbnail || data.video.thumbnail_path || data.video.thumbnail_url
         if (thumbnailName && thumbnailName.includes('/')) {
           thumbnailName = thumbnailName.split('/').pop()
         }
-        
+
         const mappedVideo = {
           ...data.video,
           video_path: data.video.video_path || data.video.video_url || data.video.filename || data.video.file_name,
@@ -209,26 +223,24 @@ function App() {
           </div>
         </div>
         <nav className="flex flex-col gap-2 px-4">
-          <button 
+          <button
             onClick={() => setCurrentView('list')}
-            className={`p-3 lg:p-4 rounded-lg transition-all flex items-center gap-3 focus:outline-none ${
-              isDarkMode 
-                ? `focus:ring-2 focus:ring-[#FFD700] focus:ring-offset-2 focus:ring-offset-mozi-black ${currentView === 'list' ? 'bg-mozi-active ring-2 ring-[#FFD700] ring-offset-2 ring-offset-mozi-black' : 'hover:bg-mozi-black-light'}`
-                : `focus:ring-2 focus:ring-[#4CAF50] focus:ring-offset-2 focus:ring-offset-white ${currentView === 'list' ? 'bg-[#4CAF50] ring-2 ring-[#4CAF50] ring-offset-2 ring-offset-white' : 'hover:bg-gray-200'}`
-            }`}
+            className={`p-3 lg:p-4 rounded-lg transition-all flex items-center gap-3 focus:outline-none ${isDarkMode
+              ? `focus:ring-2 focus:ring-[#FFD700] focus:ring-offset-2 focus:ring-offset-mozi-black ${currentView === 'list' ? 'bg-mozi-active ring-2 ring-[#FFD700] ring-offset-2 ring-offset-mozi-black' : 'hover:bg-mozi-black-light'}`
+              : `focus:ring-2 focus:ring-[#4CAF50] focus:ring-offset-2 focus:ring-offset-white ${currentView === 'list' ? 'bg-[#4CAF50] ring-2 ring-[#4CAF50] ring-offset-2 ring-offset-white' : 'hover:bg-gray-200'}`
+              }`}
           >
             <svg className={`size-6 shrink-0 ${isDarkMode ? 'text-white' : 'text-gray-800'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
             <span className={`hidden lg:block font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Accueil</span>
           </button>
-          <button 
+          <button
             onClick={() => setCurrentView('upload')}
-            className={`p-3 lg:p-4 rounded-lg transition-all flex items-center gap-3 focus:outline-none ${
-              isDarkMode 
-                ? `focus:ring-2 focus:ring-[#FFD700] focus:ring-offset-2 focus:ring-offset-mozi-black ${currentView === 'upload' ? 'bg-[#4CAF50] ring-2 ring-[#FFD700] ring-offset-2 ring-offset-mozi-black' : 'hover:bg-mozi-black-light'}`
-                : `focus:ring-2 focus:ring-[#4CAF50] focus:ring-offset-2 focus:ring-offset-white ${currentView === 'upload' ? 'bg-mozi-active ring-2 ring-[#4CAF50] ring-offset-2 ring-offset-white' : 'hover:bg-gray-200'}`
-            }`}
+            className={`p-3 lg:p-4 rounded-lg transition-all flex items-center gap-3 focus:outline-none ${isDarkMode
+              ? `focus:ring-2 focus:ring-[#FFD700] focus:ring-offset-2 focus:ring-offset-mozi-black ${currentView === 'upload' ? 'bg-[#4CAF50] ring-2 ring-[#FFD700] ring-offset-2 ring-offset-mozi-black' : 'hover:bg-mozi-black-light'}`
+              : `focus:ring-2 focus:ring-[#4CAF50] focus:ring-offset-2 focus:ring-offset-white ${currentView === 'upload' ? 'bg-mozi-active ring-2 ring-[#4CAF50] ring-offset-2 ring-offset-white' : 'hover:bg-gray-200'}`
+              }`}
           >
             <svg className={`size-6 shrink-0 ${currentView === 'upload' ? 'text-white' : (isDarkMode ? 'text-white' : 'text-gray-800')}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -250,14 +262,15 @@ function App() {
                 </svg>
               </button>
               <div className="flex-1 relative max-w-2xl">
-                <input 
-                  type="text" 
-                  placeholder="Hinted search text" 
-                  className={`w-full rounded-full px-4 py-3 lg:py-4 pl-12 lg:pl-14 text-sm lg:text-base focus:outline-none focus:ring-2 focus:ring-mozi-active ${
-                    isDarkMode 
-                      ? 'bg-mozi-grey-light/20 text-white placeholder-mozi-grey' 
-                      : 'bg-gray-100 text-gray-800 placeholder-gray-500'
-                  }`}
+                <input
+                  type="text"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  placeholder="Rechercher une vidéo ..."
+                  className={`w-full rounded-full px-4 py-3 lg:py-4 pl-12 lg:pl-14 text-sm lg:text-base focus:outline-none focus:ring-2 focus:ring-mozi-active ${isDarkMode
+                    ? 'bg-mozi-grey-light/20 text-white placeholder-mozi-grey'
+                    : 'bg-gray-100 text-gray-800 placeholder-gray-500'
+                    }`}
                 />
                 <svg className={`absolute left-4 lg:left-5 top-1/2 -translate-y-1/2 size-5 lg:size-6 ${isDarkMode ? 'text-mozi-grey' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -269,32 +282,29 @@ function App() {
                   <button
                     type="button"
                     onClick={() => setIsFilterThemeOpen(!isFilterThemeOpen)}
-                    className={`px-4 lg:px-6 py-3 lg:py-4 rounded-lg transition-all text-sm lg:text-base whitespace-nowrap flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 ${
-                      isDarkMode 
-                        ? `bg-mozi-grey-light/20 text-white hover:bg-mozi-grey-light/30 focus:ring-offset-mozi-black-light ${selectedFilterTheme ? 'bg-mozi-active/30' : ''}`
-                        : `bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-offset-white ${selectedFilterTheme ? 'bg-mozi-active/20 text-mozi-active' : ''}`
-                    }`}
+                    className={`px-4 lg:px-6 py-3 lg:py-4 rounded-lg transition-all text-sm lg:text-base whitespace-nowrap flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 ${isDarkMode
+                      ? `bg-mozi-grey-light/20 text-white hover:bg-mozi-grey-light/30 focus:ring-offset-mozi-black-light ${selectedFilterTheme ? 'bg-mozi-active/30' : ''}`
+                      : `bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-offset-white ${selectedFilterTheme ? 'bg-mozi-active/20 text-mozi-active' : ''}`
+                      }`}
                   >
                     <span>{selectedFilterTheme || 'Theme'}</span>
-                    <svg 
+                    <svg
                       className={`w-4 h-4 transition-transform duration-300 ${isFilterThemeOpen ? 'rotate-180' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  <div 
-                    className={`absolute right-0 mt-1 w-48 border rounded-lg shadow-lg max-h-60 overflow-auto z-20 transition-all duration-300 ease-in-out ${
-                      isDarkMode 
-                        ? 'bg-mozi-black border-mozi-black-light' 
-                        : 'bg-white border-gray-200'
-                    } ${
-                      isFilterThemeOpen 
-                        ? 'opacity-100 translate-y-0 visible' 
+                  <div
+                    className={`absolute right-0 mt-1 w-48 border rounded-lg shadow-lg max-h-60 overflow-auto z-20 transition-all duration-300 ease-in-out ${isDarkMode
+                      ? 'bg-mozi-black border-mozi-black-light'
+                      : 'bg-white border-gray-200'
+                      } ${isFilterThemeOpen
+                        ? 'opacity-100 translate-y-0 visible'
                         : 'opacity-0 -translate-y-2 invisible'
-                    }`}
+                      }`}
                   >
                     <div className="py-1">
                       <button
@@ -303,11 +313,10 @@ function App() {
                           setSelectedFilterTheme('')
                           setIsFilterThemeOpen(false)
                         }}
-                        className={`w-full text-left px-4 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${
-                          isDarkMode 
-                            ? `hover:bg-mozi-black-light ${!selectedFilterTheme ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'}`
-                            : `hover:bg-gray-100 ${!selectedFilterTheme ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-gray-800'}`
-                        }`}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${isDarkMode
+                          ? `hover:bg-mozi-black-light ${!selectedFilterTheme ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'}`
+                          : `hover:bg-gray-100 ${!selectedFilterTheme ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-gray-800'}`
+                          }`}
                       >
                         Tous les thèmes
                       </button>
@@ -319,11 +328,10 @@ function App() {
                             setSelectedFilterTheme(theme)
                             setIsFilterThemeOpen(false)
                           }}
-                          className={`w-full text-left px-4 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${
-                            isDarkMode 
-                              ? `hover:bg-mozi-black-light ${selectedFilterTheme === theme ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'}`
-                              : `hover:bg-gray-100 ${selectedFilterTheme === theme ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-gray-800'}`
-                          }`}
+                          className={`w-full text-left px-4 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${isDarkMode
+                            ? `hover:bg-mozi-black-light ${selectedFilterTheme === theme ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'}`
+                            : `hover:bg-gray-100 ${selectedFilterTheme === theme ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-gray-800'}`
+                            }`}
                         >
                           {theme}
                         </button>
@@ -337,28 +345,26 @@ function App() {
                   <button
                     type="button"
                     onClick={() => setIsFilterNoteOpen(!isFilterNoteOpen)}
-                    className={`px-4 lg:px-6 py-3 lg:py-4 rounded-lg transition-all text-sm lg:text-base whitespace-nowrap flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 ${
-                      isDarkMode 
-                        ? `bg-mozi-grey-light/20 text-white hover:bg-mozi-grey-light/30 focus:ring-offset-mozi-black-light ${selectedFilterNote ? 'bg-mozi-active/30' : ''}`
-                        : `bg-gray-500 text-white hover:bg-gray-600 focus:ring-offset-white ${selectedFilterNote ? 'bg-mozi-active/30 text-white' : ''}`
-                    }`}
+                    className={`px-4 lg:px-6 py-3 lg:py-4 rounded-lg transition-all text-sm lg:text-base whitespace-nowrap flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 ${isDarkMode
+                      ? `bg-mozi-grey-light/20 text-white hover:bg-mozi-grey-light/30 focus:ring-offset-mozi-black-light ${selectedFilterNote ? 'bg-mozi-active/30' : ''}`
+                      : `bg-gray-500 text-white hover:bg-gray-600 focus:ring-offset-white ${selectedFilterNote ? 'bg-mozi-active/30 text-white' : ''}`
+                      }`}
                   >
                     <span>{selectedFilterNote ? noteOptions.find(n => n.value === selectedFilterNote)?.label : 'Note'}</span>
-                    <svg 
+                    <svg
                       className={`w-4 h-4 transition-transform duration-300 ${isFilterNoteOpen ? 'rotate-180' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  <div 
-                    className={`absolute right-0 mt-1 w-48 bg-mozi-black border border-mozi-black-light rounded-lg shadow-lg max-h-60 overflow-auto z-20 transition-all duration-300 ease-in-out ${
-                      isFilterNoteOpen 
-                        ? 'opacity-100 translate-y-0 visible' 
-                        : 'opacity-0 -translate-y-2 invisible'
-                    }`}
+                  <div
+                    className={`absolute right-0 mt-1 w-48 bg-mozi-black border border-mozi-black-light rounded-lg shadow-lg max-h-60 overflow-auto z-20 transition-all duration-300 ease-in-out ${isFilterNoteOpen
+                      ? 'opacity-100 translate-y-0 visible'
+                      : 'opacity-0 -translate-y-2 invisible'
+                      }`}
                   >
                     <div className="py-1">
                       <button
@@ -367,9 +373,8 @@ function App() {
                           setSelectedFilterNote('')
                           setIsFilterNoteOpen(false)
                         }}
-                        className={`w-full text-left px-4 py-2 text-sm hover:bg-mozi-black-light transition-colors ${
-                          !selectedFilterNote ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'
-                        }`}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-mozi-black-light transition-colors ${!selectedFilterNote ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'
+                          }`}
                       >
                         Toutes les notes
                       </button>
@@ -381,9 +386,8 @@ function App() {
                             setSelectedFilterNote(option.value)
                             setIsFilterNoteOpen(false)
                           }}
-                          className={`w-full text-left px-4 py-2 text-sm hover:bg-mozi-black-light transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${
-                            selectedFilterNote === option.value ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'
-                          }`}
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-mozi-black-light transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${selectedFilterNote === option.value ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'
+                            }`}
                         >
                           {option.label}
                         </button>
@@ -397,32 +401,29 @@ function App() {
                   <button
                     type="button"
                     onClick={() => setIsFilterDateOpen(!isFilterDateOpen)}
-                    className={`px-4 lg:px-6 py-3 lg:py-4 rounded-lg transition-all text-sm lg:text-base whitespace-nowrap flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 ${
-                      isDarkMode 
-                        ? `bg-mozi-grey-light/20 text-white hover:bg-mozi-grey-light/30 focus:ring-offset-mozi-black-light ${selectedFilterDate ? 'bg-mozi-active/30' : ''}`
-                        : `bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-offset-white ${selectedFilterDate ? 'bg-mozi-active/20 text-mozi-active' : ''}`
-                    }`}
+                    className={`px-4 lg:px-6 py-3 lg:py-4 rounded-lg transition-all text-sm lg:text-base whitespace-nowrap flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 ${isDarkMode
+                      ? `bg-mozi-grey-light/20 text-white hover:bg-mozi-grey-light/30 focus:ring-offset-mozi-black-light ${selectedFilterDate ? 'bg-mozi-active/30' : ''}`
+                      : `bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-offset-white ${selectedFilterDate ? 'bg-mozi-active/20 text-mozi-active' : ''}`
+                      }`}
                   >
                     <span>{selectedFilterDate ? dateOptions.find(d => d.value === selectedFilterDate)?.label : 'Date'}</span>
-                    <svg 
+                    <svg
                       className={`w-4 h-4 transition-transform duration-300 ${isFilterDateOpen ? 'rotate-180' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  <div 
-                    className={`absolute right-0 mt-1 w-48 border rounded-lg shadow-lg max-h-60 overflow-auto z-20 transition-all duration-300 ease-in-out ${
-                      isDarkMode 
-                        ? 'bg-mozi-black border-mozi-black-light' 
-                        : 'bg-white border-gray-200'
-                    } ${
-                      isFilterDateOpen 
-                        ? 'opacity-100 translate-y-0 visible' 
+                  <div
+                    className={`absolute right-0 mt-1 w-48 border rounded-lg shadow-lg max-h-60 overflow-auto z-20 transition-all duration-300 ease-in-out ${isDarkMode
+                      ? 'bg-mozi-black border-mozi-black-light'
+                      : 'bg-white border-gray-200'
+                      } ${isFilterDateOpen
+                        ? 'opacity-100 translate-y-0 visible'
                         : 'opacity-0 -translate-y-2 invisible'
-                    }`}
+                      }`}
                   >
                     <div className="py-1">
                       <button
@@ -431,11 +432,10 @@ function App() {
                           setSelectedFilterDate('')
                           setIsFilterDateOpen(false)
                         }}
-                        className={`w-full text-left px-4 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${
-                          isDarkMode 
-                            ? `hover:bg-mozi-black-light ${!selectedFilterDate ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'}`
-                            : `hover:bg-gray-100 ${!selectedFilterDate ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-gray-800'}`
-                        }`}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${isDarkMode
+                          ? `hover:bg-mozi-black-light ${!selectedFilterDate ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'}`
+                          : `hover:bg-gray-100 ${!selectedFilterDate ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-gray-800'}`
+                          }`}
                       >
                         Toutes les dates
                       </button>
@@ -447,11 +447,10 @@ function App() {
                             setSelectedFilterDate(option.value)
                             setIsFilterDateOpen(false)
                           }}
-                          className={`w-full text-left px-4 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${
-                            isDarkMode 
-                              ? `hover:bg-mozi-black-light ${selectedFilterDate === option.value ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'}`
-                              : `hover:bg-gray-100 ${selectedFilterDate === option.value ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-gray-800'}`
-                          }`}
+                          className={`w-full text-left px-4 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-inset ${isDarkMode
+                            ? `hover:bg-mozi-black-light ${selectedFilterDate === option.value ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-white'}`
+                            : `hover:bg-gray-100 ${selectedFilterDate === option.value ? 'bg-mozi-active/20 text-mozi-active font-medium' : 'text-gray-800'}`
+                            }`}
                         >
                           {option.label}
                         </button>
@@ -463,11 +462,10 @@ function App() {
                 {/* Bouton de bascule Dark/Light */}
                 <button
                   onClick={() => setIsDarkMode(!isDarkMode)}
-                  className={`p-2 lg:p-3 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 focus:ring-offset-mozi-black-light ${
-                    isDarkMode 
-                      ? 'bg-mozi-grey-light/20 text-white hover:bg-mozi-grey-light/30' 
-                      : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                  }`}
+                  className={`p-2 lg:p-3 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-mozi-active focus:ring-offset-2 focus:ring-offset-mozi-black-light ${isDarkMode
+                    ? 'bg-mozi-grey-light/20 text-white hover:bg-mozi-grey-light/30'
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                    }`}
                   aria-label="Toggle dark mode"
                 >
                   {isDarkMode ? (

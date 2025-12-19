@@ -1,12 +1,12 @@
 const { Router } = require("express");
 const { validate } = require('../middleware/validate.js');
-const { createVideoSchema, updateVideoSchema } = require('../schemas/comment.schema.js')
+const { createVideoSchema, updateVideoSchema, queryVideoSchema } = require('../schemas/video.schema.js')
 const videoController = require("../controllers/video.controller");
 
 const router = Router();
 
 
-router.get("/", videoController.getVideos);
+router.get("/", validate(queryVideoSchema , 'query'), videoController.getVideos);
 router.get("/:id/file", videoController.getVideoFile);
 router.get("/:id", videoController.getVideoById);
 router.post("/", videoController.createVideo);

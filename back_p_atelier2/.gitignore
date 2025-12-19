@@ -1,3 +1,5 @@
 .env
 node_modules/
-assets/uploads/
+back_p_atelier2/src/assets/uploads/videos/
+back_p_atelier2/src/assets/uploads/img/
+*.mp4

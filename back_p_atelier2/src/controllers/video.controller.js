@@ -15,7 +15,9 @@ async function getVideos(req, res) {
 
    //ma logique
     try {
-      const videos = await Video.getAllVideos();
+      const videos = await Video.findWithFilters(req.query);
+      console.log("Filtres appliqués :", req.query);
+      console.log("Nombre de vidéos trouvées :", videos.length);
 
       console.log("List de mes videos", videos);
       
