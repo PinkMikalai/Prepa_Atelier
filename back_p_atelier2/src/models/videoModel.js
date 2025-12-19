@@ -40,6 +40,13 @@ const Video = {
     );
     
     return result;
+  },
+
+//ici ma function (req sql) pour delete ma video
+  async delete(id){
+    //ici ma req sql
+    const [result] = await pool.query("DELETE FROM videos WHERE id = ?", [id]); 
+    return result;
   }
 };
 
